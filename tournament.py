@@ -1,22 +1,13 @@
-"""Estimate the strength rating of a student defined heuristic by competing
+"""
+Estimate the strength rating of a student defined heuristic by competing
 against fixed-depth minimax and alpha-beta search agents in a round-robin
 tournament.
-
-NOTE: All agents are constructed from the student CustomPlayer implementation,
-so any errors present in that class will affect the outcome.
-
-The student agent plays a number of "fair" matches against each test agent.
-The matches are fair because the board is initialized randomly for both
-players, and the players play each match twice -- once as the first player and
-once as the second player.  Randomizing the openings and switching the player
-order corrects for imbalances due to both starting position and initiative.
 """
+
 import itertools
 import random
-import warnings
 
 from collections import namedtuple
-# from multiprocessing.pool import ThreadPool as Pool
 from multiprocessing import Pool
 
 from isolation import Board
@@ -26,16 +17,9 @@ from game_agent import (MinimaxPlayer, AlphaBetaPlayer, custom_score,
                         custom_score_2, custom_score_3)
 
 NUM_PROCS = 4
-NUM_MATCHES = 5  # number of matches against each opponent
+NUM_MATCHES = 6  # number of matches against each opponent
 TIME_LIMIT = 150  # number of milliseconds before timeout
 
-DESCRIPTION = """
-This script evaluates the performance of the custom_score evaluation
-function against a baseline agent using alpha-beta search and iterative
-deepening (ID) called `AB_Improved`. The three `AB_Custom` agents use
-ID and alpha-beta search with the custom_score functions defined in
-game_agent.py.
-"""
 
 Agent = namedtuple("Agent", ["player", "name"])
 
@@ -50,12 +34,14 @@ def _run(*args):
 
 
 def play_round(cpu_agent, test_agents, win_counts, num_matches):
-    """Compare the test agents to the cpu agent in "fair" matches.
+    """
+    Compare the test agents to the cpu agent in "fair" matches.
 
     "Fair" matches use random starting locations and force the agents to
     play as both first and second player to control for advantages resulting
     from choosing better opening moves or having first initiative to move.
     """
+
     timeout_count = 0
     forfeit_count = 0
     pool = Pool(NUM_PROCS)
@@ -95,7 +81,7 @@ def update(total_wins, wins):
     return total_wins
 
 
-def play_matches(cpu_agents, test_agents, num_matches):
+def run_tournament(cpu_agents, test_agents, num_matches):
     """Play matches between the test agent and each cpu_agent individually. """
     total_wins = {agent.player: 0 for agent in test_agents}
     total_timeouts = 0.
@@ -143,21 +129,18 @@ def play_matches(cpu_agents, test_agents, num_matches):
         print(("\nYour ID search forfeited {} games while there were still " +
                "legal moves available to play.\n").format(total_forfeits))
 
+    return total_wins
+
 
 def main():
-
-    # Define two agents to compare -- these agents will play from the same
-    # starting position against the same adversaries in the tournament
     test_agents = [
         Agent(AlphaBetaPlayer(score_fn=improved_score), "AB_Improved"),
         Agent(AlphaBetaPlayer(score_fn=custom_score), "AB_Custom"),
         Agent(AlphaBetaPlayer(score_fn=custom_score_2), "AB_Custom_2"),
-        Agent(AlphaBetaPlayer(score_fn=custom_score_3), "AB_Custom_3")
+        Agent(AlphaBetaPlayer(score_fn=custom_score_3), "AB_Custom_3"),
     ]
 
-    # Define a collection of agents to compete against the test agents
     cpu_agents = [
-        Agent(RandomPlayer(), "Random"),
         Agent(MinimaxPlayer(score_fn=open_move_score), "MM_Open"),
         Agent(MinimaxPlayer(score_fn=center_score), "MM_Center"),
         Agent(MinimaxPlayer(score_fn=improved_score), "MM_Improved"),
@@ -166,11 +149,7 @@ def main():
         Agent(AlphaBetaPlayer(score_fn=improved_score), "AB_Improved")
     ]
 
-    print(DESCRIPTION)
-    print("{:^74}".format("*************************"))
-    print("{:^74}".format("Playing Matches"))
-    print("{:^74}".format("*************************"))
-    play_matches(cpu_agents, test_agents, NUM_MATCHES)
+    run_tournament(cpu_agents, test_agents, NUM_MATCHES)
 
 
 if __name__ == "__main__":
