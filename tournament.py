@@ -8,7 +8,8 @@ import itertools
 import random
 
 from collections import namedtuple
-from multiprocessing import Pool
+
+from pathos.multiprocessing import ProcessingPool as PPool
 
 from isolation import Board
 from sample_players import (RandomPlayer, open_move_score,
@@ -17,7 +18,7 @@ from game_agent import (MinimaxPlayer, AlphaBetaPlayer, custom_score,
                         custom_score_2, custom_score_3)
 
 NUM_PROCS = 4
-NUM_MATCHES = 6  # number of matches against each opponent
+NUM_MATCHES = 2  # number of matches against each opponent
 TIME_LIMIT = 150  # number of milliseconds before timeout
 
 
@@ -44,7 +45,7 @@ def play_round(cpu_agent, test_agents, win_counts, num_matches):
 
     timeout_count = 0
     forfeit_count = 0
-    pool = Pool(NUM_PROCS)
+    pool = PPool(NUM_PROCS)
 
     for _ in range(num_matches):
 
@@ -61,7 +62,7 @@ def play_round(cpu_agent, test_agents, win_counts, num_matches):
                     for i, agent in enumerate(test_agents)], [])
 
         # play all games and tally the results
-        for result, termination in pool.imap_unordered(_run, games):
+        for result, termination in pool.map(_run, games):
             game = games[result[0]]
             winner = game[1] if result[1] else game[2]
 
@@ -81,7 +82,7 @@ def update(total_wins, wins):
     return total_wins
 
 
-def run_tournament(cpu_agents, test_agents, num_matches):
+def play_matches(cpu_agents, test_agents, num_matches):
     """Play matches between the test agent and each cpu_agent individually. """
     total_wins = {agent.player: 0 for agent in test_agents}
     total_timeouts = 0.
@@ -129,8 +130,6 @@ def run_tournament(cpu_agents, test_agents, num_matches):
         print(("\nYour ID search forfeited {} games while there were still " +
                "legal moves available to play.\n").format(total_forfeits))
 
-    return total_wins
-
 
 def main():
     test_agents = [
@@ -149,7 +148,7 @@ def main():
         Agent(AlphaBetaPlayer(score_fn=improved_score), "AB_Improved")
     ]
 
-    run_tournament(cpu_agents, test_agents, NUM_MATCHES)
+    play_matches(cpu_agents, test_agents, NUM_MATCHES)
 
 
 if __name__ == "__main__":
