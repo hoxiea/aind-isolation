@@ -131,6 +131,27 @@ def play_matches(cpu_agents, test_agents, num_matches):
                "legal moves available to play.\n").format(total_forfeits))
 
 
+def run_tournament(cpu_agents, test_agents, num_matches):
+    """Play matches between the test agent and each cpu_agent individually. """
+    total_wins = {agent.player: 0 for agent in test_agents}
+    total_timeouts = 0.
+    total_forfeits = 0.
+
+    for agent in cpu_agents:
+        wins = {test_agents[0].player: 0,
+                test_agents[1].player: 0,
+                test_agents[2].player: 0,
+                test_agents[3].player: 0,
+                agent.player: 0}
+
+        counts = play_round(agent, test_agents, wins, num_matches)
+        total_timeouts += counts[0]
+        total_forfeits += counts[1]
+        total_wins = update(total_wins, wins)
+
+    return total_wins, total_timeouts, total_forfeits
+
+
 def main():
     test_agents = [
         Agent(AlphaBetaPlayer(score_fn=improved_score), "AB_Improved"),
